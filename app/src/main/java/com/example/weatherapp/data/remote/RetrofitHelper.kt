@@ -13,4 +13,5 @@ object RetrofitInstance {
             .build()
             .create(WeatherApiService::class.java)
     }
+
 }
