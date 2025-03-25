@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.accompanist.flowlayout.FlowRow
 
 @Composable
 fun SettingsScreen() {
@@ -46,7 +47,7 @@ fun SettingsScreen() {
 fun SettingOption(title: String, options: List<String>) {
     var selectedOption by remember { mutableStateOf(options.first()) }
 
-Column(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
@@ -55,17 +56,24 @@ Column(
             .padding(16.dp)
     ) {
         Text(text = title, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
-        options.forEach { option ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = 8.dp)
-            ) {
-                RadioButton(
-                    selected = (option == selectedOption),
-                    onClick = { selectedOption = option },
-                    colors = RadioButtonDefaults.colors(selectedColor = Color.Cyan)
-                )
-                Text(text = option, fontSize = 16.sp, color = Color.White)
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            mainAxisSpacing = 16.dp,
+            crossAxisSpacing = 8.dp
+        ) {
+            options.forEach { option ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    RadioButton(
+                        selected = (option == selectedOption),
+                        onClick = { selectedOption = option },
+                        colors = RadioButtonDefaults.colors(selectedColor = Color.Cyan)
+                    )
+                    Text(text = option, fontSize = 16.sp, color = Color.White)
+                }
             }
         }
     }
