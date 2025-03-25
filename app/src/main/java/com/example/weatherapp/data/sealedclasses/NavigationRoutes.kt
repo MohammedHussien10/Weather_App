@@ -11,20 +11,20 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 sealed class BottomBarRoutes(
-   val route: String, val title: String, val icon: ImageVector
+   val route: String, val title: Int, val icon: ImageVector
 ) {
     @Serializable
-    object Home : BottomBarRoutes("ToHome","Home", Icons.Filled.Home)
+    object Home : BottomBarRoutes("ToHome",R.string.home, Icons.Filled.Home)
 
     @Serializable
     object Favourites :
-        BottomBarRoutes("ToFavorites","Favorites",  Icons.Filled.Favorite)
+        BottomBarRoutes("ToFavorites",R.string.home,  Icons.Filled.Favorite)
 
     @Serializable
     object Alarms :
-        BottomBarRoutes("ToAlarms","Alarms",  Icons.Filled.Notifications)
+        BottomBarRoutes("ToAlarms",R.string.home,  Icons.Filled.Notifications)
 
     @Serializable
     object Settings :
-        BottomBarRoutes("ToSettings","Settings",  Icons.Filled.Settings)
+        BottomBarRoutes("ToSettings",R.string.home,  Icons.Filled.Settings)
 }
