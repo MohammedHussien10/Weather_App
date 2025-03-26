@@ -1,5 +1,6 @@
 package com.example.weatherapp.settingsscreen.ui
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,10 +26,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.accompanist.flowlayout.FlowRow
+import androidx.navigation.NavHostController
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -36,44 +37,57 @@ fun SettingsScreen() {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        SettingOption(title = "Language", options = listOf("Arabic", "English", "Default"))
-        SettingOption(title = "Temp Unit", options = listOf("Celsius °C", "Kelvin K", "Fahrenheit °F"))
-        SettingOption(title = "Location", options = listOf("Gps", "Map"))
-        SettingOption(title = "Wind Speed Unit", options = listOf("meter/sec", "mile/hour"))
+        SettingOption("Language", listOf("Arabic", "English", "Default")) { selected ->
+            Log.d("Settings", "Selected Language: $selected")
+        }
+
+        SettingOption("Temp Unit", listOf("Celsius °C", "Kelvin K", "Fahrenheit °F")) { selected ->
+            Log.d("Settings", "Selected Temp Unit: $selected")
+        }
+
+        SettingOption("Location", listOf("Gps", "Map")) { selected ->
+            if (selected == "Map") {
+                Log.d("Settings", "User selected Map - Open Map Screen")
+                navController.navigate("SelectableMapScreen")
+            } else {
+                Log.d("Settings", "Using GPS")
+            }
+        }
+
+        SettingOption("Wind Speed Unit", listOf("meter/sec", "mile/hour")) { selected ->
+            Log.d("Settings", "Selected Wind Speed: $selected")
+        }
     }
 }
 
 @Composable
-fun SettingOption(title: String, options: List<String>) {
+fun SettingOption(title: String, options: List<String>, onOptionSelected: (String) -> Unit) {
     var selectedOption by remember { mutableStateOf(options.first()) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(8.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(Color(0xFF2193b0))
-            .padding(16.dp)
+            .padding(12.dp)
     ) {
         Text(text = title, fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Bold)
 
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            mainAxisSpacing = 16.dp,
-            crossAxisSpacing = 8.dp
-        ) {
-            options.forEach { option ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    RadioButton(
-                        selected = (option == selectedOption),
-                        onClick = { selectedOption = option },
-                        colors = RadioButtonDefaults.colors(selectedColor = Color.Cyan)
-                    )
-                    Text(text = option, fontSize = 16.sp, color = Color.White)
-                }
+        options.forEach { option ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 4.dp)
+            ) {
+                RadioButton(
+                    selected = (option == selectedOption),
+                    onClick = {
+                        selectedOption = option
+                        onOptionSelected(option)
+                    },
+                    colors = RadioButtonDefaults.colors(selectedColor = Color.Cyan)
+                )
+                Text(text = option, fontSize = 16.sp, color = Color.White, modifier = Modifier.padding(start = 8.dp))
             }
         }
     }
