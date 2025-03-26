@@ -37,7 +37,7 @@ fun SettingsScreen(navController: NavHostController) {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        SettingOption("Language", listOf("Arabic", "English", "Default")) { selected ->
+        SettingOption("Language", listOf("Arabic", "English")) { selected ->
             Log.d("Settings", "Selected Language: $selected")
         }
 
