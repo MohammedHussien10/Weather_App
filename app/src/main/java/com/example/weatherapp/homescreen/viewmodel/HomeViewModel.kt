@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
     private val _weatherData = MutableLiveData<WeatherResponse?>()
     val weatherData: LiveData<WeatherResponse?> = _weatherData
+    val isLoading = MutableLiveData<Boolean>()
 
     private val _forecastLiveData = MutableLiveData<ForecastResponse>()
     val forecastLiveData: LiveData<ForecastResponse> get() = _forecastLiveData
@@ -31,22 +32,28 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
 
     fun fetchWeatherByLocation(latitude: Double, longitude: Double, apiKey: String,units: String) {
         viewModelScope.launch {
+            isLoading.value = true
             try {
                 val response = repository.getWeatherByLocation(latitude, longitude, apiKey,units)
                 _weatherData.postValue(response)
             } catch (e: Exception) {
                 Log.e("WeatherViewModel", "Error fetching weather by location", e)
+            }finally {
+                isLoading.value = false
             }
         }
     }
 
     fun fetchWeatherForecast(lat: Double, lon: Double, apiKey: String,units: String) {
         viewModelScope.launch {
+            isLoading.value = true
             try {
                 val response = repository.getWeatherForecast(lat, lon, apiKey,units)
                 _forecastLiveData.postValue(response)
             } catch (e: Exception) {
                 Log.e("WeatherViewModel", "Error fetching forecast: ${e.message}")
+            }finally {
+                isLoading.value = false
             }
         }
     }

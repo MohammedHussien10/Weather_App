@@ -20,10 +20,14 @@ data class Weather(
     val main: String,
     val description: String,
     val icon: String
-)
+){
+    fun getIconUrl(): String {
+        return "https://openweathermap.org/img/wn/${icon}@2x.png"
+    }
+}
 
 data class Main(
-    val temp_Kelvin: Double,
+    val temp: Double,
     val feels_Like_Human: Double,
     val temp_Min: Double,
     val temp_Max: Double,
