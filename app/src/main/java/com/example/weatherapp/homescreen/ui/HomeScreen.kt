@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -57,6 +58,8 @@ import com.example.weatherapp.data.remote.ForecastResponse
 import com.example.weatherapp.data.remote.Weather
 import com.example.weatherapp.data.remote.WeatherResponse
 import com.example.weatherapp.data.remote.convertTimestampToDate
+import com.example.weatherapp.data.remote.convertTimestampToDateOnly
+import com.example.weatherapp.data.remote.convertTimestampToTimeOnly
 import com.example.weatherapp.homescreen.viewmodel.HomeViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -168,11 +171,12 @@ fun Details(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (isLoading) {
-                 CircularProgressIndicator()
+                CircularProgressIndicator()
             } else {
                 TopCurrentWeatherDetails(weather, iconUrl)
                 Spacer(modifier = Modifier.height(16.dp))
                 CurrentWeatherDetails(weather)
+                HourlyDetails(forecast, iconUrl)
                 //  DailyDetails(forecast)
             }
 
@@ -183,24 +187,51 @@ fun Details(
 
 @Composable
 fun CurrentWeatherDetails(weather: WeatherResponse?) {
+    if (weather != null) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+            val temp = weather.main.temp.toInt()
 
-        val temp = weather?.main?.temp?.toInt()
 
-        if (temp != null) {
-            Text(text = if (temp<0) "- $temp" else "$temp", fontSize = 50.sp,fontWeight = FontWeight.Bold)
+            Text(
+                text = if (temp < 0) "- $temp" else "$temp",
+                fontSize = 50.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = weather.sys.country + "," + weather.name,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .background(Color.Transparent)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "\uD83C\uDF07 sunset ${convertTimestampToTimeOnly(weather.sys.sunset)}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "\uD83C\uDF05 sunrise ${convertTimestampToTimeOnly(weather.sys.sunrise)}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
-
     }
-
+}
 
 
 @Composable
@@ -224,7 +255,13 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
                     fontWeight = FontWeight.Bold
                 )
                 val feelsLike = weather.main.feels_Like_Human.let {
-                    if (it == 0.0) 9.0 else it.toInt()
+                    if (it == 0.0) 9
+                    else
+                        if (it.toInt() < 0) {
+                            it
+                        } else {
+
+                        }
                 }
 
                 Text(
@@ -235,7 +272,7 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
 
             }
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) { WeatherIcon(iconUrl) }
+        Column(modifier = Modifier.align(Alignment.CenterVertically)) { WeatherIcon(iconUrl) }
         if (weather != null) {
 
             Column(
@@ -244,11 +281,10 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
             ) {
                 Text(
                     text = stringResource(R.string.today),
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
                     fontSize = 20.sp, fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = convertTimestampToDate(weather.dt),
+                    text = convertTimestampToDateOnly(weather.dt),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -257,6 +293,51 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
         }
 
 
+    }
+}
+
+
+@Composable
+fun HourlyDetails(forecast: ForecastResponse?, iconUrl: String?) {
+    if (forecast != null) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(Color.Transparent)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Hourly Details", fontSize = 30.sp,
+                fontWeight = FontWeight.Bold
+
+            )
+        }
+        LazyRow(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 30.dp)
+
+
+        ) {
+
+            forecast.list.forEach { forecastItem ->
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        Alignment.CenterHorizontally
+                    ) {
+                        val temp = forecastItem.main.temp.toInt()
+                        Text(text = " ${convertTimestampToTimeOnly(forecastItem.dt)}",fontSize = 12.sp)
+                        WeatherIcon(iconUrl)
+                        Text(text = " ${if (temp < 0) "- $temp" else "$temp"}°C")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -276,8 +357,8 @@ fun DailyDetails(forecast: ForecastResponse?) {
     ) {
         forecast?.list?.forEach { forecastItem ->
             item {
-                Text(text = "Time: ${convertTimestampToDate(forecastItem.dt)}")
-                Text(text = "Temp: ${forecastItem.main.humidity}°C")
+                Text(text = "Time: ${convertTimestampToTimeOnly(forecastItem.dt)}")
+                Text(text = "Temp: ${forecastItem.weather[0].icon}°C")
                 Text(text = "Condition: ${forecastItem.weather[0].description}")
 
             }
