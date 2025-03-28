@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.magnifier
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -163,6 +166,7 @@ fun Details(
                     colors = listOf(Color(0xFF2193b0), Color(0xFF6dd5ed))
                 )
             )
+            .verticalScroll(rememberScrollState())
     )
     {
         Column(
@@ -177,11 +181,74 @@ fun Details(
                 Spacer(modifier = Modifier.height(16.dp))
                 CurrentWeatherDetails(weather)
                 HourlyDetails(forecast, iconUrl)
-                //  DailyDetails(forecast)
+                Spacer(modifier = Modifier.height(16.dp))
+                DailyDetails(weather)
             }
 
 
         }
+    }
+}
+
+@Composable
+fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Transparent)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+
+        if (weather != null) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "${weather.weather[0].description}",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                val feelsLike = weather.main.feels_Like_Human.let {
+                    if (it == 0.0) 9
+                    else
+                        if (it.toInt() < 0) {
+                            it
+                        } else {
+
+                        }
+                }
+
+                Text(
+                    text = "Feels_Like : $feelsLike°C",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+            }
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally) { WeatherIcon(iconUrl) }
+        if (weather != null) {
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.today),
+                    fontSize = 20.sp, fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = convertTimestampToDateOnly(weather.dt),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+        }
+
+
     }
 }
 
@@ -235,69 +302,6 @@ fun CurrentWeatherDetails(weather: WeatherResponse?) {
 
 
 @Composable
-fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .background(Color.Transparent)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-
-        if (weather != null) {
-            Column(horizontalAlignment = Alignment.Start) {
-                Text(
-                    text = "${weather.weather[0].description}",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                val feelsLike = weather.main.feels_Like_Human.let {
-                    if (it == 0.0) 9
-                    else
-                        if (it.toInt() < 0) {
-                            it
-                        } else {
-
-                        }
-                }
-
-                Text(
-                    text = "Feels_Like : $feelsLike°C",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-            }
-        }
-        Column(modifier = Modifier.align(Alignment.CenterVertically)) { WeatherIcon(iconUrl) }
-        if (weather != null) {
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    text = stringResource(R.string.today),
-                    fontSize = 20.sp, fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = convertTimestampToDateOnly(weather.dt),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-        }
-
-
-    }
-}
-
-
-@Composable
 fun HourlyDetails(forecast: ForecastResponse?, iconUrl: String?) {
     if (forecast != null) {
         Row(
@@ -331,7 +335,10 @@ fun HourlyDetails(forecast: ForecastResponse?, iconUrl: String?) {
                         Alignment.CenterHorizontally
                     ) {
                         val temp = forecastItem.main.temp.toInt()
-                        Text(text = " ${convertTimestampToTimeOnly(forecastItem.dt)}",fontSize = 12.sp)
+                        Text(
+                            text = " ${convertTimestampToTimeOnly(forecastItem.dt)}",
+                            fontSize = 12.sp
+                        )
                         WeatherIcon(iconUrl)
                         Text(text = " ${if (temp < 0) "- $temp" else "$temp"}°C")
                     }
@@ -342,24 +349,89 @@ fun HourlyDetails(forecast: ForecastResponse?, iconUrl: String?) {
 }
 
 @Composable
-fun DailyDetails(forecast: ForecastResponse?) {
+fun DailyDetails(weather: WeatherResponse?) {
+    if (weather != null) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(Color.Transparent)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Daily Details", fontSize = 30.sp,
+                fontWeight = FontWeight.Bold
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 120.dp)
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFF2193b0), Color(0xFF6dd5ed))
-                )
             )
+        }
 
-    ) {
-        forecast?.list?.forEach { forecastItem ->
-            item {
-                Text(text = "Time: ${convertTimestampToTimeOnly(forecastItem.dt)}")
-                Text(text = "Temp: ${forecastItem.weather[0].icon}°C")
-                Text(text = "Condition: ${forecastItem.weather[0].description}")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(Color.Transparent)
+                .padding(16.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            if (weather != null) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) { // column one
+                    Text(
+                        text = "Pressure",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${weather.main.pressure} hpa",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "Humidity",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${weather.main.humidity} %",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) { // column two
+                    Text(
+                        text = "Wind Speed",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${weather.wind.speed} m/s",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "Clouds",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${weather.clouds.all} %",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                }
 
             }
         }
