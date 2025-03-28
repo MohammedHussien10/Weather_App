@@ -30,3 +30,16 @@ fun convertTimestampToTimeOnly(timestamp: Long): String {
 
     return String.format("%02d:%02d %s", if (hour == 0) 12 else hour, minute, amPm)
 }
+
+//Forecast get next 5 days
+fun getNextFiveDaysForecast(forecast: ForecastResponse): List<ForecastItem> {
+    val groupedByDate = forecast.list.groupBy { convertTimestampToDay(it.dt) }
+    return groupedByDate.values.map { it.first() }.take(5)
+}
+
+//convert Timestamp to Day
+fun convertTimestampToDay(timestamp: Long): String {
+    val sdf = SimpleDateFormat("EEEE", Locale.getDefault())
+    val date = Date(timestamp * 1000)
+    return sdf.format(date)
+}

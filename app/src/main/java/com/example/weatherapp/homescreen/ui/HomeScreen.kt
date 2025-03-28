@@ -62,7 +62,9 @@ import com.example.weatherapp.data.remote.Weather
 import com.example.weatherapp.data.remote.WeatherResponse
 import com.example.weatherapp.data.remote.convertTimestampToDate
 import com.example.weatherapp.data.remote.convertTimestampToDateOnly
+import com.example.weatherapp.data.remote.convertTimestampToDay
 import com.example.weatherapp.data.remote.convertTimestampToTimeOnly
+import com.example.weatherapp.data.remote.getNextFiveDaysForecast
 import com.example.weatherapp.homescreen.viewmodel.HomeViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -79,7 +81,7 @@ fun HomeScreen(viewModel: HomeViewModel, apiKey: String) {
     val isLoading by viewModel.isLoading.observeAsState(initial = false)
     val context = LocalContext.current
 
-    // طلب الإذن للموقع
+    // get Permission
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
@@ -183,6 +185,7 @@ fun Details(
                 HourlyDetails(forecast, iconUrl)
                 Spacer(modifier = Modifier.height(16.dp))
                 DailyDetails(weather)
+                NextFiveDays(forecast, iconUrl,weather)
             }
 
 
@@ -204,7 +207,8 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
 
         if (weather != null) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally) {
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
                     text = "${weather.weather[0].description}",
                     fontSize = 20.sp,
@@ -229,7 +233,8 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
             }
         }
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally) { WeatherIcon(iconUrl) }
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) { WeatherIcon(iconUrl) }
         if (weather != null) {
 
             Column(
@@ -241,6 +246,11 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
                 )
                 Text(
                     text = convertTimestampToDateOnly(weather.dt),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = convertTimestampToTimeOnly(weather.dt),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -437,6 +447,109 @@ fun DailyDetails(weather: WeatherResponse?) {
         }
     }
 }
+//@Composable
+//fun tt(forecast: ForecastResponse?, iconUrl: String?){
+//
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(8.dp)
+//                .background(Color.Transparent)
+//                .padding(16.dp),
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.SpaceBetween
+//        ) {
+//            Text(
+//                text = "Next 5 Days", fontSize = 30.sp,
+//                fontWeight = FontWeight.Bold
+//
+//            )
+//        }
+//        LazyColumn(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(top = 30.dp)
+//                .height(300.dp)
+//
+//        ) {
+//
+//            forecast.list.forEach { forecastItem ->
+//                item {
+//                    Row(
+//                        modifier = Modifier.fillMaxSize(),
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.SpaceBetween
+//                    ) {
+//                        val temp = forecastItem.main.temp.toInt()
+//                        Text(
+//                            text = " ${convertTimestampToTimeOnly(forecastItem.dt)}",
+//                            fontSize = 12.sp
+//                        )
+//                        WeatherIcon(iconUrl)
+//                        Text(text = " ${if (temp < 0) "- $temp" else "$temp"}°C")
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
+//}
+
+@Composable
+fun NextFiveDays(forecast: ForecastResponse?, iconUrl: String?,weather: WeatherResponse?) {
+    if (forecast != null || weather != null)  {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(Color.Transparent)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Next 5 Days", fontSize = 30.sp,
+                fontWeight = FontWeight.Bold
+
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(Color.Transparent)
+                .padding(16.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            forecast?.let {
+                val nextFiveDays = getNextFiveDaysForecast(it)
+
+                Column {
+                    nextFiveDays.forEach { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val temp = item.main.temp.toInt()
+                            val day = convertTimestampToDateOnly(item.dt)
+                            val today = weather?.let { it1 -> convertTimestampToDateOnly(it1.dt) }
+                            Text(text = if (today == day)  today else day)
+                            WeatherIcon(iconUrl)
+                            Text(text = if (temp < 0) "- $temp" else "$temp°C")
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+}
+
+//WeatherIcon
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
