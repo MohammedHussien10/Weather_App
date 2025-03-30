@@ -3,6 +3,7 @@ package com.example.weatherapp.mapscreen
 import android.content.Context
 import android.location.Geocoder
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.weatherapp.R
 import com.example.weatherapp.data.sealedclasses.BottomBarRoutes
+import com.example.weatherapp.settingsscreen.viewmodel.SettingsViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.CameraPosition
@@ -39,27 +41,10 @@ import java.io.IOException
 import java.util.Locale
 import com.skydoves.landscapist.glide.GlideImage
 
-//@Composable
-//fun MapScreen() {
-//    val cairoLocation = LatLng(30.0444, 31.2357)
-//    val cameraPositionState = rememberCameraPositionState {
-//        position = CameraPosition.fromLatLngZoom(cairoLocation, 5f)
-//    }
-//
-//    GoogleMap(
-//        modifier = Modifier.fillMaxSize(),
-//        cameraPositionState = cameraPositionState
-//    ) {
-//        Marker(
-//            state = rememberMarkerState(position = cairoLocation),
-//            title = "Selected Location"
-//        )
-//    }
-//}
-
 @Composable
-fun SelectableMapScreen(navController: NavController, context: Context) {
+fun SelectableMapScreen(navController: NavController,settingsViewModel: SettingsViewModel) {
     var selectedLocation by remember { mutableStateOf(LatLng(30.033333, 31.233334)) }
+    val context = LocalContext.current
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(selectedLocation, 5f)
     }
@@ -113,16 +98,15 @@ fun SelectableMapScreen(navController: NavController, context: Context) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        val lat = selectedLocation.latitude
-                        val long = selectedLocation.longitude
-                        navController.navigate("ToHome/$lat/$long") {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
+                        settingsViewModel.saveLocation(selectedLocation.latitude,selectedLocation.longitude)
+                        settingsViewModel.saveLocationMethod("Map") // تحديث الطريقة لتكون "Map"
+                        val message = if (cityName == "City Not Found") {
+                            "Location Saved"
+                        } else {
+                            "Location Saved: $cityName"
                         }
-
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        navController.popBackStack()
                     },
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {

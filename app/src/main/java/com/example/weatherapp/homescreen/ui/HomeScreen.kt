@@ -67,6 +67,8 @@ import com.example.weatherapp.data.remote.convertTimestampToDay
 import com.example.weatherapp.data.remote.convertTimestampToTimeOnly
 import com.example.weatherapp.data.remote.getNextFiveDaysForecast
 import com.example.weatherapp.homescreen.viewmodel.HomeViewModel
+import com.example.weatherapp.settingsscreen.ui.getCurrentLocation
+import com.example.weatherapp.settingsscreen.viewmodel.SettingsViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.skydoves.landscapist.glide.GlideImage
@@ -74,23 +76,34 @@ import kotlin.math.log
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel, latitude: Double,
-    longitude: Double,apiKey: String
+    homeViewModel: HomeViewModel, settingsViewModel: SettingsViewModel, apiKey: String
 ) {
-    //Text(text = "Latitude: $latitude, Longitude: $longitude")
-    Log.i("data","Latitude: $latitude, Longitude: $longitude")
-    val tempUnit = "metric"
-    val weather by viewModel.weatherData.collectAsState()
-    val iconUrl = weather?.weather?.firstOrNull()?.getIconUrl()
-    val forecast by viewModel.forecastLiveData.collectAsState()
-    var location by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    val isLoading by viewModel.isLoading.collectAsState(initial = false)
-    val context = LocalContext.current
 
-LaunchedEffect(Unit) {
-    viewModel.fetchWeatherByLocation(latitude, longitude, apiKey, units = tempUnit)
-    viewModel.fetchWeatherForecast(latitude, longitude, apiKey, units = tempUnit)
-}
+    val weather by homeViewModel.weatherData.collectAsState()
+    val iconUrl = weather?.weather?.firstOrNull()?.getIconUrl()
+    val forecast by homeViewModel.forecastData.collectAsState()
+    val isLoading by homeViewModel.isLoading.collectAsState(initial = false)
+    val context = LocalContext.current
+    val locationMethod by settingsViewModel.locationMethod.collectAsState(initial = "Gps")
+    val latitude by settingsViewModel.latitude.collectAsState(initial = 0.0)
+    val longitude by settingsViewModel.longitude.collectAsState(initial = 0.0)
+    val tempUnit by settingsViewModel.tempUnit.collectAsState(initial = "metric")
+
+    LaunchedEffect(locationMethod, latitude, longitude) {
+        if (locationMethod == "Gps") {
+            getCurrentLocation(context) { lat, lon ->
+                homeViewModel.fetchWeatherByLocation(lat, lon, apiKey, tempUnit)
+                homeViewModel.fetchWeatherForecast(lat, lon, apiKey, units = tempUnit)
+                Log.i("dataGps", "Latitude: $lat, Longitude: $lon")
+            }
+        } else {
+            if (latitude != 0.0 && longitude != 0.0) {
+                homeViewModel.fetchWeatherByLocation(latitude, longitude, apiKey, tempUnit)
+                homeViewModel.fetchWeatherForecast(latitude, longitude, apiKey, units = tempUnit)
+                Log.i("dataMap", "Latitude: $latitude, Longitude: $longitude")
+            }
+        }
+    }
 
 
     Details(weather, forecast, iconUrl, isLoading)

@@ -20,7 +20,7 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
     val isLoading: StateFlow<Boolean> = _isLoading
 
     private val _forecastLiveData = MutableStateFlow<ForecastResponse?>(null)
-    val forecastLiveData: StateFlow<ForecastResponse?> get() = _forecastLiveData
+    val forecastData: StateFlow<ForecastResponse?> get() = _forecastLiveData
 
     fun getWeatherByCityName (city: String, apiKey: String) {
         viewModelScope.launch {

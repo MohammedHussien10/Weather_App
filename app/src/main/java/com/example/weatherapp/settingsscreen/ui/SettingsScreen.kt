@@ -52,6 +52,7 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
     val language by settingsViewModel.language.collectAsState()
     val tempUnit by settingsViewModel.tempUnit.collectAsState()
     val windUnit by settingsViewModel.windSpeedUnit.collectAsState()
+    val locationMethod by settingsViewModel.locationMethod.collectAsState(initial = "Gps")
 
     // save Updates in datastore
     fun saveLanguage(selected: String) {
@@ -64,6 +65,10 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
 
     fun saveWindSpeedUnit(selected: String) {
         settingsViewModel.saveWindSpeedUnit(selected)
+    }
+
+    fun saveLocationMethod(selected: String) {
+        settingsViewModel.saveLocationMethod(selected)
     }
 
     val requestPermissionLauncher =
@@ -127,10 +132,12 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
             saveTempUnit(selected)
         }
 
-        SettingOption("Location", listOf("Gps", "Map"),if (useGps.value) "Gps" else "Map") { selected ->
+        SettingOption("Location", listOf("Gps", "Map"), locationMethod) { selected ->
+            saveLocationMethod(selected)
             if (selected == "Map") {
                 navController.navigate("SelectableMapScreen")
-            } else {
+            } else if (selected == "Gps") {
+                // عند اختيار GPS، تحديث الموقع تلقائيًا
                 useGps.value = true
             }
         }
