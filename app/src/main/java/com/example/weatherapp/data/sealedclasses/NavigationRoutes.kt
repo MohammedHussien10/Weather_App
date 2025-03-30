@@ -14,17 +14,17 @@ sealed class BottomBarRoutes(
    val route: String, val title: Int, val icon: ImageVector
 ) {
     @Serializable
-    object Home : BottomBarRoutes("ToHome",R.string.home, Icons.Filled.Home)
+    object Home : BottomBarRoutes("ToHome/{lat}/{long}",R.string.home, Icons.Filled.Home)
 
     @Serializable
     object Favourites :
-        BottomBarRoutes("ToFavorites",R.string.home,  Icons.Filled.Favorite)
+        BottomBarRoutes("ToFavorites",R.string.favourites,  Icons.Filled.Favorite)
 
     @Serializable
     object Alarms :
-        BottomBarRoutes("ToAlarms",R.string.home,  Icons.Filled.Notifications)
+        BottomBarRoutes("ToAlarms",R.string.alarms,  Icons.Filled.Notifications)
 
     @Serializable
     object Settings :
-        BottomBarRoutes("ToSettings",R.string.home,  Icons.Filled.Settings)
+        BottomBarRoutes("ToSettings",R.string.settings,  Icons.Filled.Settings)
 }

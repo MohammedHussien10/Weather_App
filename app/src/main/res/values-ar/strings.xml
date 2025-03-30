@@ -3,5 +3,8 @@
 <resources>
     <string name="app_name">الطقس</string>
     <string name="home">الرئيسة</string>
+    <string name="favourites">المفضلة</string>
+    <string name="alarms">التنبيهات</string>
+    <string name="settings">الإعدادات</string>
     <string name="today">اليوم</string>
 </resources>
