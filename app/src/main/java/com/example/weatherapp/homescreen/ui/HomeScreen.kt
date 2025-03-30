@@ -37,6 +37,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -69,87 +70,35 @@ import com.example.weatherapp.homescreen.viewmodel.HomeViewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.skydoves.landscapist.glide.GlideImage
+import kotlin.math.log
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel, apiKey: String) {
-
+fun HomeScreen(
+    viewModel: HomeViewModel, latitude: Double,
+    longitude: Double,apiKey: String
+) {
+    //Text(text = "Latitude: $latitude, Longitude: $longitude")
+    Log.i("data","Latitude: $latitude, Longitude: $longitude")
     val tempUnit = "metric"
-    val weather by viewModel.weatherData.observeAsState()
+    val weather by viewModel.weatherData.collectAsState()
     val iconUrl = weather?.weather?.firstOrNull()?.getIconUrl()
-    val forecast by viewModel.forecastLiveData.observeAsState()
+    val forecast by viewModel.forecastLiveData.collectAsState()
     var location by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    val isLoading by viewModel.isLoading.observeAsState(initial = false)
+    val isLoading by viewModel.isLoading.collectAsState(initial = false)
     val context = LocalContext.current
 
-    // get Permission
-    val requestPermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                getCurrentLocation(context) { lat, lon ->
-                    location = Pair(lat, lon)
-                    viewModel.fetchWeatherByLocation(lat, lon, apiKey, units = tempUnit)
-                }
-            } else {
-                Toast.makeText(context, "Need permission For Location", Toast.LENGTH_SHORT).show()
-            }
-        }
+LaunchedEffect(Unit) {
+    viewModel.fetchWeatherByLocation(latitude, longitude, apiKey, units = tempUnit)
+    viewModel.fetchWeatherForecast(latitude, longitude, apiKey, units = tempUnit)
+}
 
-    LaunchedEffect(Unit) {
-        when {
-            ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                getCurrentLocation(context) { lat, lon ->
-                    location = Pair(lat, lon)
-                    viewModel.fetchWeatherByLocation(lat, lon, apiKey, units = tempUnit)
-                    viewModel.fetchWeatherForecast(lat, lon, apiKey, units = tempUnit)
-                }
-            }
-
-            ActivityCompat.shouldShowRequestPermissionRationale(
-                context as Activity,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) -> {
-                Toast.makeText(context, "Location permission is required", Toast.LENGTH_SHORT)
-                    .show()
-            }
-
-            else -> {
-                requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        }
-    }
 
     Details(weather, forecast, iconUrl, isLoading)
 
 }
 
 
-private fun getCurrentLocation(context: Context, onLocationReceived: (Double, Double) -> Unit) {
-    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    if (ActivityCompat.checkSelfPermission(
-            context,
-            android.Manifest.permission.ACCESS_FINE_LOCATION
-        ) != PackageManager.PERMISSION_GRANTED &&
-        ActivityCompat.checkSelfPermission(
-            context,
-            android.Manifest.permission.ACCESS_COARSE_LOCATION
-        ) != PackageManager.PERMISSION_GRANTED
-    ) {
-        return
-    }
-
-    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-        .addOnSuccessListener { location ->
-            if (location != null) {
-                onLocationReceived(location.latitude, location.longitude)
-            } else {
-                Toast.makeText(context, "Failed to get location", Toast.LENGTH_SHORT).show()
-            }
-        }
-}
 
 @Composable
 fun Details(
@@ -185,7 +134,7 @@ fun Details(
                 HourlyDetails(forecast, iconUrl)
                 Spacer(modifier = Modifier.height(16.dp))
                 DailyDetails(weather)
-                NextFiveDays(forecast, iconUrl,weather)
+                NextFiveDays(forecast, iconUrl, weather)
             }
 
 
@@ -496,8 +445,8 @@ fun DailyDetails(weather: WeatherResponse?) {
 //}
 
 @Composable
-fun NextFiveDays(forecast: ForecastResponse?, iconUrl: String?,weather: WeatherResponse?) {
-    if (forecast != null || weather != null)  {
+fun NextFiveDays(forecast: ForecastResponse?, iconUrl: String?, weather: WeatherResponse?) {
+    if (forecast != null || weather != null) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -537,7 +486,7 @@ fun NextFiveDays(forecast: ForecastResponse?, iconUrl: String?,weather: WeatherR
                             val temp = item.main.temp.toInt()
                             val day = convertTimestampToDateOnly(item.dt)
                             val today = weather?.let { it1 -> convertTimestampToDateOnly(it1.dt) }
-                            Text(text = if (today == day)  today else day)
+                            Text(text = if (today == day) today else day)
                             WeatherIcon(iconUrl)
                             Text(text = if (temp < 0) "- $temp" else "$temp°C")
                         }

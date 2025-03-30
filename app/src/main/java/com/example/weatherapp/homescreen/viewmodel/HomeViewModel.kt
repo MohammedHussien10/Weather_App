@@ -9,21 +9,24 @@ import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.data.remote.ForecastResponse
 import com.example.weatherapp.data.remote.WeatherResponse
 import com.example.weatherapp.data.repository.WeatherRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
-    private val _weatherData = MutableLiveData<WeatherResponse?>()
-    val weatherData: LiveData<WeatherResponse?> = _weatherData
-    val isLoading = MutableLiveData<Boolean>()
+    private val _weatherData = MutableStateFlow<WeatherResponse?>(null)
+    val weatherData: StateFlow<WeatherResponse?> = _weatherData
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
 
-    private val _forecastLiveData = MutableLiveData<ForecastResponse>()
-    val forecastLiveData: LiveData<ForecastResponse> get() = _forecastLiveData
+    private val _forecastLiveData = MutableStateFlow<ForecastResponse?>(null)
+    val forecastLiveData: StateFlow<ForecastResponse?> get() = _forecastLiveData
 
     fun getWeatherByCityName (city: String, apiKey: String) {
         viewModelScope.launch {
             try {
                 val response = repository.getWeatherByCityName(city, apiKey)
-                _weatherData.postValue(response)
+                _weatherData.value = response
             } catch (e: Exception) {
                 Log.e("WeatherViewModel", "Error fetching weather", e)
             }
@@ -32,34 +35,34 @@ class HomeViewModel(private val repository: WeatherRepository) : ViewModel() {
 
     fun fetchWeatherByLocation(latitude: Double, longitude: Double, apiKey: String,units: String) {
         viewModelScope.launch {
-            isLoading.value = true
+            _isLoading.value = true
             try {
                 val response = repository.getWeatherByLocation(latitude, longitude, apiKey,units)
-                _weatherData.postValue(response)
+                _weatherData.value = response
             } catch (e: Exception) {
                 Log.e("WeatherViewModel", "Error fetching weather by location", e)
             }finally {
-                isLoading.value = false
+                _isLoading.value = false
             }
         }
     }
 
     fun fetchWeatherForecast(lat: Double, lon: Double, apiKey: String,units: String) {
         viewModelScope.launch {
-            isLoading.value = true
+            _isLoading.value = true
             try {
                 val response = repository.getWeatherForecast(lat, lon, apiKey,units)
-                _forecastLiveData.postValue(response)
+                _forecastLiveData.value = response
             } catch (e: Exception) {
                 Log.e("WeatherViewModel", "Error fetching forecast: ${e.message}")
             }finally {
-                isLoading.value = false
+                _isLoading.value = false
             }
         }
     }
 }
 
-class ViewModelFactory(private val repository: WeatherRepository) : ViewModelProvider.Factory {
+class HomeViewModelFactory(private val repository: WeatherRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
             return HomeViewModel(repository) as T
