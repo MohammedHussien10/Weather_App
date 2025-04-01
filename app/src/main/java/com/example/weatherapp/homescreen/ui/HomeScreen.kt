@@ -106,7 +106,7 @@ fun HomeScreen(
     }
 
 
-    Details(weather, forecast, iconUrl, isLoading)
+    Details(weather, forecast, iconUrl, isLoading,tempUnit)
 
 }
 
@@ -118,7 +118,8 @@ fun Details(
     weather: WeatherResponse?,
     forecast: ForecastResponse?,
     iconUrl: String?,
-    isLoading: Boolean
+    isLoading: Boolean,
+    tempUnit:String
 ) {
 
     Box(
@@ -143,7 +144,7 @@ fun Details(
             } else {
                 TopCurrentWeatherDetails(weather, iconUrl)
                 Spacer(modifier = Modifier.height(16.dp))
-                CurrentWeatherDetails(weather)
+                CurrentWeatherDetails(weather,tempUnit)
                 HourlyDetails(forecast, iconUrl)
                 Spacer(modifier = Modifier.height(16.dp))
                 DailyDetails(weather)
@@ -225,7 +226,7 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
 }
 
 @Composable
-fun CurrentWeatherDetails(weather: WeatherResponse?) {
+fun CurrentWeatherDetails(weather: WeatherResponse?,tempUnit:String) {
     if (weather != null) {
         Column(
             modifier = Modifier
@@ -236,12 +237,18 @@ fun CurrentWeatherDetails(weather: WeatherResponse?) {
 
             val temp = weather.main.temp.toInt()
 
+            val unit = when (tempUnit) {
+                "metric" -> "°C"
+                "standard" -> "°K"
+                else -> "°F"
+            }
 
             Text(
-                text = if (temp < 0) "- $temp" else "$temp",
+                text = if (temp < 0) "- $temp $unit" else "$temp $unit",
                 fontSize = 50.sp,
                 fontWeight = FontWeight.Bold
             )
+
             Text(
                 text = weather.sys.country + "," + weather.name,
                 fontSize = 14.sp,

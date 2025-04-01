@@ -131,7 +131,7 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
 
             if(selected =="Celsius °C" ){
                 saveTempUnit("metric")
-            }else if(selected == "Kelvin K"){
+            }else if(selected == "Kelvin °K"){
                 saveTempUnit("standard")
             }else{
                 saveTempUnit("imperial")
