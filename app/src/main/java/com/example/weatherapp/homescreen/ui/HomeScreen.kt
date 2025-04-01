@@ -93,13 +93,13 @@ fun HomeScreen(
         if (locationMethod == "Gps") {
             getCurrentLocation(context) { lat, lon ->
                 homeViewModel.fetchWeatherByLocation(lat, lon, apiKey, tempUnit)
-                homeViewModel.fetchWeatherForecast(lat, lon, apiKey, units = tempUnit)
-                Log.i("dataGps", "Latitude: $lat, Longitude: $lon")
+                homeViewModel.fetchWeatherForecast(lat, lon, apiKey, tempUnit)
+                Log.i("dataGps", "Latitude: $lat, tempUnit: $tempUnit")
             }
         } else {
             if (latitude != 0.0 && longitude != 0.0) {
                 homeViewModel.fetchWeatherByLocation(latitude, longitude, apiKey, tempUnit)
-                homeViewModel.fetchWeatherForecast(latitude, longitude, apiKey, units = tempUnit)
+                homeViewModel.fetchWeatherForecast(latitude, longitude, apiKey ,tempUnit)
                 Log.i("dataMap", "Latitude: $latitude, Longitude: $longitude")
             }
         }

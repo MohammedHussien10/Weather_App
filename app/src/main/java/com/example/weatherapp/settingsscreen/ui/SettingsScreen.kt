@@ -47,7 +47,7 @@ import com.google.android.gms.location.Priority
 fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewModel, apiKey: String,settingsViewModel: SettingsViewModel) {
     val context = LocalContext.current
     var location by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    val tempUnits = "metric"
+//    val tempUnits = "metric"
     val useGps = remember { mutableStateOf(false) }
     val language by settingsViewModel.language.collectAsState()
     val tempUnit by settingsViewModel.tempUnit.collectAsState()
@@ -76,15 +76,14 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
             if (isGranted) {
                 getCurrentLocation(context) { lat, lon ->
                     location = Pair(lat, lon)
-                    homeViewModel.fetchWeatherByLocation(lat, lon, apiKey, units = tempUnits)
-                    homeViewModel.fetchWeatherForecast(lat, lon, apiKey, units = tempUnits)
+                    homeViewModel.fetchWeatherByLocation(lat, lon, apiKey,tempUnit)
+                    homeViewModel.fetchWeatherForecast(lat, lon, apiKey,tempUnit)
                 }
             } else {
                 Toast.makeText(context, "Need permission for Location", Toast.LENGTH_SHORT).show()
             }
         }
 
-    // استخدام LaunchedEffect بشكل صحيح
     LaunchedEffect(useGps.value) {
         if (useGps.value) {
             when {
@@ -128,8 +127,16 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
             saveLanguage(selected)
         }
 
-        SettingOption("Temp Unit", listOf("Celsius °C", "Kelvin K", "Fahrenheit °F"),tempUnit) { selected ->
-            saveTempUnit(selected)
+        SettingOption("Temp Unit", listOf("Celsius °C", "Kelvin °K", "Fahrenheit °F"),tempUnit) { selected ->
+
+            if(selected =="Celsius °C" ){
+                saveTempUnit("metric")
+            }else if(selected == "Kelvin K"){
+                saveTempUnit("standard")
+            }else{
+                saveTempUnit("imperial")
+            }
+
         }
 
         SettingOption("Location", listOf("Gps", "Map"), locationMethod) { selected ->
@@ -137,7 +144,6 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
             if (selected == "Map") {
                 navController.navigate("SelectableMapScreen")
             } else if (selected == "Gps") {
-                // عند اختيار GPS، تحديث الموقع تلقائيًا
                 useGps.value = true
             }
         }
@@ -206,8 +212,6 @@ fun getCurrentLocation(context: Context, onLocationReceived: (Double, Double) ->
         .addOnSuccessListener { location ->
             if (location != null) {
                 onLocationReceived(location.latitude, location.longitude)
-            } else {
-                Toast.makeText(context, "Failed to get location", Toast.LENGTH_SHORT).show()
             }
         }
 }
