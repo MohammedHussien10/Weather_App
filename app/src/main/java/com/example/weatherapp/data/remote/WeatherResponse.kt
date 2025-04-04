@@ -1,6 +1,9 @@
 package com.example.weatherapp.data.remote
 
+import com.example.weatherapp.data.local.models.WeatherDetails
+
 data class WeatherResponse(
+    val id: Int,
     val name: String,
     val coord: Coord,
     val weather: List<Weather>,
@@ -49,3 +52,25 @@ data class Sys(
     val sunrise: Long,
     val sunset: Long
 )
+
+fun WeatherResponse.toWeatherDetails(): WeatherDetails {
+    return WeatherDetails(
+        id = this.id,
+        lon = this.coord.lon,
+        lat = this.coord.lat,
+        name = this.name,
+        temp = this.main.temp,
+        feels_Like_Human = this.main.feels_Like_Human,
+        temp_Min = this.main.temp_Min,
+        temp_Max = this.main.temp_Max,
+        pressure = this.main.pressure,
+        humidity = this.main.humidity,
+        windSpeed = this.wind.speed,
+        windDeg = this.wind.deg,
+        country = this.sys.country,
+        sunrise = this.sys.sunrise,
+        sunset = this.sys.sunset,
+        dt = this.dt,
+        isFav = false
+    )
+}

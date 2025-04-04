@@ -44,10 +44,14 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 
 @Composable
-fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewModel, apiKey: String,settingsViewModel: SettingsViewModel) {
+fun SettingsScreen(
+    navController: NavHostController,
+    homeViewModel: HomeViewModel,
+    apiKey: String,
+    settingsViewModel: SettingsViewModel
+) {
     val context = LocalContext.current
     var location by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-//    val tempUnits = "metric"
     val useGps = remember { mutableStateOf(false) }
     val language by settingsViewModel.language.collectAsState()
     val tempUnit by settingsViewModel.tempUnit.collectAsState()
@@ -76,8 +80,8 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
             if (isGranted) {
                 getCurrentLocation(context) { lat, lon ->
                     location = Pair(lat, lon)
-                    homeViewModel.fetchWeatherByLocation(lat, lon, apiKey,tempUnit)
-                    homeViewModel.fetchWeatherForecast(lat, lon, apiKey,tempUnit)
+                    homeViewModel.fetchWeatherByLocation(lat, lon, apiKey, tempUnit)
+                    homeViewModel.fetchWeatherForecast(lat, lon, apiKey, tempUnit)
                 }
             } else {
                 Toast.makeText(context, "Need permission for Location", Toast.LENGTH_SHORT).show()
@@ -119,21 +123,24 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1B0C2A))
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        SettingOption("Language", listOf("Arabic", "English"),language) { selected ->
+        SettingOption("Language", listOf("Arabic", "English"), language) { selected ->
             saveLanguage(selected)
         }
 
-        SettingOption("Temp Unit", listOf("Celsius °C", "Kelvin °K", "Fahrenheit °F"),tempUnit) { selected ->
+        SettingOption(
+            "Temp Unit",
+            listOf("Celsius °C", "Kelvin °K", "Fahrenheit °F"),
+            tempUnit
+        ) { selected ->
 
-            if(selected =="Celsius °C" ){
+            if (selected == "Celsius °C") {
                 saveTempUnit("metric")
-            }else if(selected == "Kelvin °K"){
+            } else if (selected == "Kelvin °K") {
                 saveTempUnit("standard")
-            }else{
+            } else {
                 saveTempUnit("imperial")
             }
 
@@ -148,15 +155,25 @@ fun SettingsScreen(navController: NavHostController, homeViewModel: HomeViewMode
             }
         }
 
-        SettingOption("Wind Speed Unit", listOf("meter/sec", "mile/hour"),windUnit) { selected ->
-            saveWindSpeedUnit(selected)
-        }
+        SettingOption("Wind Speed Unit", listOf("meter/sec", "mile/hour"), windUnit) { selected ->
+
+           if (selected == "meter/sec") {
+                saveWindSpeedUnit("standard")
+            } else {
+                saveWindSpeedUnit("imperial")
+            }
     }
+}
 }
 
 
 @Composable
-fun SettingOption(title: String, options: List<String>, currentValue: String, onOptionSelected: (String) -> Unit) {
+fun SettingOption(
+    title: String,
+    options: List<String>,
+    currentValue: String,
+    onOptionSelected: (String) -> Unit
+) {
     var selectedOption by remember { mutableStateOf(currentValue) }
 
     Column(

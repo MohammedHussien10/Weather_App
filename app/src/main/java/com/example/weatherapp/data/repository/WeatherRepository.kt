@@ -1,14 +1,20 @@
 package com.example.weatherapp.data.repository
 
 import android.content.Context
+import androidx.work.WorkManager
 import com.example.weatherapp.data.datastore.DataStoreManager
+import com.example.weatherapp.data.enumclasses.AlertType
+import com.example.weatherapp.data.local.LocalDataSourceImpl
+import com.example.weatherapp.data.local.WeatherDao
+import com.example.weatherapp.data.local.models.ForecastDetails
+import com.example.weatherapp.data.local.models.WeatherDetails
 import com.example.weatherapp.data.remote.ForecastResponse
 import com.example.weatherapp.data.remote.RemoteDataSourceImpl
 import com.example.weatherapp.data.remote.WeatherResponse
 import com.example.weatherapp.data.remote.WeatherApiService
 import kotlinx.coroutines.flow.Flow
 
-class WeatherRepository(private val remoteDataSourceImpl: RemoteDataSourceImpl,private val dataStoreManager: DataStoreManager) {
+class WeatherRepository(private val remoteDataSourceImpl: RemoteDataSourceImpl, private val localDataSourceImpl: LocalDataSourceImpl,private val dataStoreManager: DataStoreManager) {
 
     val latitude: Flow<Double> = dataStoreManager.latitude
     val longitude: Flow<Double> = dataStoreManager.longitude
@@ -16,15 +22,18 @@ class WeatherRepository(private val remoteDataSourceImpl: RemoteDataSourceImpl,p
     val tempUnit: Flow<String> = dataStoreManager.tempUnit
     val windSpeedUnit: Flow<String> = dataStoreManager.windSpeedUnit
     val locationMethod: Flow<String> = dataStoreManager.locationMethod
+
     companion object {
         @Volatile
         private var INSTANCE: WeatherRepository? = null
 
-        fun getInstance(context: Context ,apiService: WeatherApiService): WeatherRepository {
+        fun getInstance(context: Context, apiService: WeatherApiService, weatherDao: WeatherDao): WeatherRepository {
             return INSTANCE ?: synchronized(this) {
                 val dataStoreManager = DataStoreManager.getInstance(context)
+                val workManager = WorkManager.getInstance(context)
                 val remoteDataSourceImpl = RemoteDataSourceImpl.getInstance(apiService)
-                val instance = WeatherRepository(remoteDataSourceImpl,dataStoreManager)
+                val localDataSourceImpl = LocalDataSourceImpl.getInstance(weatherDao)
+                val instance = WeatherRepository(remoteDataSourceImpl,localDataSourceImpl,dataStoreManager)
                 INSTANCE = instance
                 instance
             }
@@ -47,6 +56,8 @@ class WeatherRepository(private val remoteDataSourceImpl: RemoteDataSourceImpl,p
     suspend fun getWeatherForecast(lat: Double, lon: Double, apiKey: String,units: String): ForecastResponse {
         return remoteDataSourceImpl.getWeatherForecast(lat, lon, apiKey,units)
     }
+
+
 
     suspend fun saveLanguage(language: String) {
         dataStoreManager.saveLanguage(language)
@@ -75,4 +86,68 @@ class WeatherRepository(private val remoteDataSourceImpl: RemoteDataSourceImpl,p
     fun getLongitudeRepo(): Flow<Double> = dataStoreManager.longitude
 
     fun getLocationMethodRepo(): Flow<String> = dataStoreManager.locationMethod
+
+////////////////////////////////favourites
+
+
+
+    suspend fun insertWeather(weatherDetails: WeatherDetails) {
+        localDataSourceImpl.insertWeather(weatherDetails)
+    }
+
+
+    fun getWeatherByCity(cityName: String,id:Int): Flow<WeatherDetails> {
+        return localDataSourceImpl.getWeatherByCity(cityName,id)
+    }
+
+
+    suspend fun deleteWeatherByCity(cityName: String,latitude: Double, longitude: Double) {
+        localDataSourceImpl.deleteWeatherByCity(cityName,latitude,longitude)
+    }
+
+
+    fun getAllFavoriteLocations(): Flow<List<WeatherDetails>> {
+        return localDataSourceImpl.getAllFavoriteLocations()
+    }
+
+
+    suspend fun insertForecast(forecastResponse: ForecastDetails) {
+        localDataSourceImpl.insertForecast(forecastResponse)
+    }
+
+
+    fun getForecastByCity(cityName: String): Flow<ForecastDetails> {
+        return localDataSourceImpl.getForecastByCity(cityName)
+    }
+
+
+    suspend fun deleteForecastByCity(cityName: String) {
+        localDataSourceImpl.deleteForecastByCity(cityName)
+    }
+
+    fun getAllForecasts(): Flow<List<ForecastDetails>> {
+        return localDataSourceImpl.getAllForecasts()
+    }
+
+
+
+
+
+    //////alarms
+
+
+     fun createWeatherAlertWork(context: Context, hour: Int, minute: Int, alertType: AlertType) {
+        // استدعاء الـ WorkManager لإنشاء العمل بناءً على التنبيه الذي تم تحديده
+//        val workRequest = OneTimeWorkRequestBuilder<WeatherAlertWorker>()
+//            .setInitialDelay(duration, TimeUnit.HOURS) // تحديد المدة بناءً على الساعات
+//            .setInputData(workDataOf("alertType" to alertType.name)) // إرسال نوع التنبيه للعمل
+//            .build()
+        createWeatherAlertWork(context,hour,minute,alertType)
+    }
+
+     fun cancelWeatherAlert(context: Context) {
+        // إلغاء كل الأعمال الخاصة بالتنبيه
+        WorkManager.getInstance(context).cancelAllWork()
+    }
+
 }

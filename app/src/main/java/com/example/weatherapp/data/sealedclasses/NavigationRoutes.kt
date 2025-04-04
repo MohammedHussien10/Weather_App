@@ -27,4 +27,8 @@ sealed class BottomBarRoutes(
     @Serializable
     object Settings :
         BottomBarRoutes("ToSettings",R.string.settings,  Icons.Filled.Settings)
+
+//    @Serializable
+//    object Details :
+//        BottomBarRoutes("details/{lat}/{long}",R.string.settings,  Icons.Filled.Settings)
 }

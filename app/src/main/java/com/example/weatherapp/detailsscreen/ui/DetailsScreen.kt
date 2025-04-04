@@ -1,8 +1,12 @@
-package com.example.weatherapp.homescreen.ui
+package com.example.weatherapp.detailsscreen.ui
+
+
 
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -58,6 +62,7 @@ import androidx.core.content.ContextCompat
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.weatherapp.R
+import com.example.weatherapp.data.local.models.WeatherDetails
 import com.example.weatherapp.data.remote.ForecastResponse
 import com.example.weatherapp.data.remote.Weather
 import com.example.weatherapp.data.remote.WeatherResponse
@@ -66,6 +71,8 @@ import com.example.weatherapp.data.remote.convertTimestampToDateOnly
 import com.example.weatherapp.data.remote.convertTimestampToDay
 import com.example.weatherapp.data.remote.convertTimestampToTimeOnly
 import com.example.weatherapp.data.remote.getNextFiveDaysForecast
+import com.example.weatherapp.data.remote.toWeatherDetails
+import com.example.weatherapp.homescreen.viewmodel.DetailsViewModel
 import com.example.weatherapp.homescreen.viewmodel.HomeViewModel
 import com.example.weatherapp.settingsscreen.ui.getCurrentLocation
 import com.example.weatherapp.settingsscreen.viewmodel.SettingsViewModel
@@ -74,42 +81,36 @@ import com.google.android.gms.location.Priority
 import com.skydoves.landscapist.glide.GlideImage
 import kotlin.math.log
 
-@Composable
-fun HomeScreen(
-    homeViewModel: HomeViewModel, settingsViewModel: SettingsViewModel, apiKey: String
-) {
+///
 
+
+
+@Composable
+fun DetailsScreen(city: String, lat: Double, lon: Double,homeViewModel: HomeViewModel,settingsViewModel:SettingsViewModel,apikey:String,detailsViewModel: DetailsViewModel,cityId:Int) {
+    val weatherDetails by detailsViewModel.weatherDetails.collectAsState()
+    val context = LocalContext.current
+    val isConnected = remember { mutableStateOf(isInternetAvailable(context)) }
     val weather by homeViewModel.weatherData.collectAsState()
     val iconUrl = weather?.weather?.firstOrNull()?.getIconUrl()
     val forecast by homeViewModel.forecastData.collectAsState()
-    val isLoading by homeViewModel.isLoading.collectAsState(initial = false)
-    val context = LocalContext.current
-    val locationMethod by settingsViewModel.locationMethod.collectAsState(initial = "Gps")
-    val latitude by settingsViewModel.latitude.collectAsState(initial = 0.0)
-    val longitude by settingsViewModel.longitude.collectAsState(initial = 0.0)
     val tempUnit by settingsViewModel.tempUnit.collectAsState(initial = "metric")
-    Log.i("dataMap", "id is: forecast ${forecast?.city?.id},id is: weatherres ${weather?.id}"  )
-    LaunchedEffect(locationMethod, latitude, longitude) {
-        if (locationMethod == "Gps") {
-            getCurrentLocation(context) { lat, lon ->
-                homeViewModel.fetchWeatherByLocation(lat, lon, apiKey, tempUnit)
-                homeViewModel.fetchWeatherForecast(lat, lon, apiKey, tempUnit)
+    val isLoading by homeViewModel.isLoading.collectAsState(initial = false)
+    Log.i("DetailsScreen", "city $city lat $lat: lon $lon idco $cityId")
+    LaunchedEffect(lat, lon) {
+        if (isConnected.value) {
+                homeViewModel.fetchWeatherByLocation(lat, lon, apikey, tempUnit)
+                homeViewModel.fetchWeatherForecast(lat, lon, apikey, tempUnit)
                 Log.i("dataGps", "Latitude: $lat, tempUnit: $tempUnit")
-            }
-        } else {
-            if (latitude != 0.0 && longitude != 0.0) {
-                homeViewModel.fetchWeatherByLocation(latitude, longitude, apiKey, tempUnit)
-                homeViewModel.fetchWeatherForecast(latitude, longitude, apiKey ,tempUnit)
-                Log.i("dataMap", "Latitude: $latitude, Longitude: $longitude")
-            }
+    }else{
+            detailsViewModel.getWeatherByCityId(city, cityId)
         }
+
     }
 
 
-    Details(weather, forecast, iconUrl, isLoading,tempUnit)
+    Details(weather, forecast, iconUrl, isLoading,tempUnit,weatherDetails)
 
 }
-
 
 
 
@@ -119,7 +120,8 @@ fun Details(
     forecast: ForecastResponse?,
     iconUrl: String?,
     isLoading: Boolean,
-    tempUnit:String
+    tempUnit:String,
+    weatherDetails:WeatherDetails?
 ) {
 
     Box(
@@ -142,7 +144,7 @@ fun Details(
             if (isLoading) {
                 CircularProgressIndicator()
             } else {
-                TopCurrentWeatherDetails(weather, iconUrl)
+                TopCurrentWeatherDetails(weather, iconUrl,weatherDetails)
                 Spacer(modifier = Modifier.height(16.dp))
                 CurrentWeatherDetails(weather,tempUnit)
                 HourlyDetails(forecast, iconUrl)
@@ -157,7 +159,7 @@ fun Details(
 }
 
 @Composable
-fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
+fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?,weatherDetails:WeatherDetails?) {
 
     Row(
         modifier = Modifier
@@ -174,6 +176,11 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
             ) {
                 Text(
                     text = "${weather.weather[0].description}",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${weatherDetails?.sunrise}",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -226,7 +233,7 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
 }
 
 @Composable
-fun CurrentWeatherDetails(weather: WeatherResponse?,tempUnit:String) {
+fun CurrentWeatherDetails(weather: WeatherResponse?, tempUnit:String) {
     if (weather != null) {
         Column(
             modifier = Modifier
@@ -416,53 +423,7 @@ fun DailyDetails(weather: WeatherResponse?) {
         }
     }
 }
-//@Composable
-//fun tt(forecast: ForecastResponse?, iconUrl: String?){
-//
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(8.dp)
-//                .background(Color.Transparent)
-//                .padding(16.dp),
-//            verticalAlignment = Alignment.CenterVertically,
-//            horizontalArrangement = Arrangement.SpaceBetween
-//        ) {
-//            Text(
-//                text = "Next 5 Days", fontSize = 30.sp,
-//                fontWeight = FontWeight.Bold
-//
-//            )
-//        }
-//        LazyColumn(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(top = 30.dp)
-//                .height(300.dp)
-//
-//        ) {
-//
-//            forecast.list.forEach { forecastItem ->
-//                item {
-//                    Row(
-//                        modifier = Modifier.fillMaxSize(),
-//                        verticalAlignment = Alignment.CenterVertically,
-//                        horizontalArrangement = Arrangement.SpaceBetween
-//                    ) {
-//                        val temp = forecastItem.main.temp.toInt()
-//                        Text(
-//                            text = " ${convertTimestampToTimeOnly(forecastItem.dt)}",
-//                            fontSize = 12.sp
-//                        )
-//                        WeatherIcon(iconUrl)
-//                        Text(text = " ${if (temp < 0) "- $temp" else "$temp"}°C")
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//}
+
 
 @Composable
 fun NextFiveDays(forecast: ForecastResponse?, iconUrl: String?, weather: WeatherResponse?) {
@@ -530,4 +491,12 @@ fun WeatherIcon(iconUrl: String?) {
             modifier = Modifier.size(64.dp)
         )
     }
+}
+
+
+fun isInternetAvailable(context: Context): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val network = connectivityManager.activeNetwork ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
 }

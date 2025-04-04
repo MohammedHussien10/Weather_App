@@ -28,6 +28,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.weatherapp.R
 import com.example.weatherapp.data.sealedclasses.BottomBarRoutes
+import com.example.weatherapp.favouritesscreen.viewmodel.FavoritesViewModel
 import com.example.weatherapp.settingsscreen.viewmodel.SettingsViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -42,13 +43,14 @@ import java.util.Locale
 import com.skydoves.landscapist.glide.GlideImage
 
 @Composable
-fun SelectableMapScreen(navController: NavController,settingsViewModel: SettingsViewModel) {
+fun SelectableMapScreen(navController: NavController,settingsViewModel: SettingsViewModel, favoritesViewModel: FavoritesViewModel,apiKey: String) {
     var selectedLocation by remember { mutableStateOf(LatLng(30.033333, 31.233334)) }
     val context = LocalContext.current
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(selectedLocation, 5f)
     }
     val markerState = rememberMarkerState(position = selectedLocation)
+    val tempUnit by settingsViewModel.tempUnit.collectAsState(initial = "metric")
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
@@ -98,8 +100,19 @@ fun SelectableMapScreen(navController: NavController,settingsViewModel: Settings
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
-                        settingsViewModel.saveLocation(selectedLocation.latitude,selectedLocation.longitude)
-                        settingsViewModel.saveLocationMethod("Map") // تحديث الطريقة لتكون "Map"
+                        val previousBackStackEntry = navController.previousBackStackEntry
+                        if ("${previousBackStackEntry?.destination?.route}" == "ToSettings") {
+                            settingsViewModel.saveLocation(
+                                selectedLocation.latitude,
+                                selectedLocation.longitude
+                            )
+                            settingsViewModel.saveLocationMethod("Map")
+                        } else {
+                            favoritesViewModel.addFavoriteLocation(
+                                latitude = selectedLocation.latitude,
+                                longitude = selectedLocation.longitude,apiKey,tempUnit
+                            )
+                        }
                         val message = if (cityName == "City Not Found") {
                             "Location Saved"
                         } else {
