@@ -26,7 +26,6 @@ class SettingsViewModel( private val repository: WeatherRepository) : ViewModel(
     )
 
 
-    // Save Location (Latitude & Longitude) using the unified method
     fun saveLocation(lat: Double, long: Double) {
         viewModelScope.launch {
             repository.saveLocation(lat, long)
@@ -81,6 +80,7 @@ class SettingsViewModel( private val repository: WeatherRepository) : ViewModel(
             repository.saveLocationMethod(method)
         }
     }
+
 
 
     class SettingsModelFactory(private val repository: WeatherRepository) : ViewModelProvider.Factory {

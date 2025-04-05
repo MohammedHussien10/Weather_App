@@ -1,10 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <resources>
-    <string name="app_name">الطقس</string>
-    <string name="home">الرئيسة</string>
+    <string name="app_name">تطبيق الطقس</string>
+    <string name="home">الرئيسية</string>
     <string name="favourites">المفضلة</string>
     <string name="alarms">التنبيهات</string>
     <string name="settings">الإعدادات</string>
     <string name="today">اليوم</string>
+    <string name="sunset">غروب الشمس</string>
+    <string name="sunrise">شروق الشمس</string>
+    <string name="hourly_details">تفاصيل الساعة</string>
+    <string name="daily_details">تفاصيل اليوم</string>
+    <string name="pressure">الضغط الجوي</string>
+    <string name="humidity">الرطوبة</string>
+    <string name="wind_speed">سرعة الرياح</string>
+    <string name="clouds">السحب</string>
+    <string name="next_five_days">الخمسة أيام القادمة</string>
+    <string name="feel_like">الشعور</string>
+    <string name="language">اللغة</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_english">الإنجليزية</string>
+    <string name="temp_unit">وحدة الحرارة</string>
+    <string name="temp_unit_celsius">مئوية °C</string>
+    <string name="temp_unit_kelvin">كيلفن °K</string>
+    <string name="temp_unit_fahrenheit">فهرنهايت °F</string>
+    <string name="location">الموقع</string>
+    <string name="location_gps">جي بي إس</string>
+    <string name="location_map">الخريطة</string>
+    <string name="wind_speed_unit">وحدة سرعة الرياح</string>
+    <string name="wind_speed_unit_meter_sec">متر/ثانية</string>
+    <string name="wind_speed_unit_mile_hour">ميل/ساعة</string>
 </resources>

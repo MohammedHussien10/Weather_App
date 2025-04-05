@@ -78,7 +78,8 @@ import kotlin.math.log
 fun HomeScreen(
     homeViewModel: HomeViewModel, settingsViewModel: SettingsViewModel, apiKey: String
 ) {
-
+    var location by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    val useGps = remember { mutableStateOf(false) }
     val weather by homeViewModel.weatherData.collectAsState()
     val iconUrl = weather?.weather?.firstOrNull()?.getIconUrl()
     val forecast by homeViewModel.forecastData.collectAsState()
@@ -88,6 +89,7 @@ fun HomeScreen(
     val latitude by settingsViewModel.latitude.collectAsState(initial = 0.0)
     val longitude by settingsViewModel.longitude.collectAsState(initial = 0.0)
     val tempUnit by settingsViewModel.tempUnit.collectAsState(initial = "metric")
+    val windUnit by settingsViewModel.windSpeedUnit.collectAsState(initial = "metric")
     Log.i("dataMap", "id is: forecast ${forecast?.city?.id},id is: weatherres ${weather?.id}"  )
     LaunchedEffect(locationMethod, latitude, longitude) {
         if (locationMethod == "Gps") {
@@ -101,6 +103,51 @@ fun HomeScreen(
                 homeViewModel.fetchWeatherByLocation(latitude, longitude, apiKey, tempUnit)
                 homeViewModel.fetchWeatherForecast(latitude, longitude, apiKey ,tempUnit)
                 Log.i("dataMap", "Latitude: $latitude, Longitude: $longitude")
+            }
+        }
+    }
+
+    val requestPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                getCurrentLocation(context) { lat, lon ->
+                    location = Pair(lat, lon)
+                    homeViewModel.fetchWeatherByLocation(lat, lon, apiKey, tempUnit)
+                    homeViewModel.fetchWeatherForecast(lat, lon, apiKey, tempUnit)
+                }
+            } else {
+                Toast.makeText(context, "Need permission for Location", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    LaunchedEffect(useGps.value) {
+        if (useGps.value) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    getCurrentLocation(context) { lat, lon ->
+                        location = Pair(lat, lon)
+                        homeViewModel.fetchWeatherByLocation(lat, lon, apiKey, units = tempUnit)
+                        homeViewModel.fetchWeatherForecast(lat, lon, apiKey, units = tempUnit)
+                    }
+                }
+
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as Activity,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) -> {
+                    Toast.makeText(
+                        context,
+                        "Location permission is required",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                else -> {
+                    requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                }
             }
         }
     }
@@ -119,9 +166,8 @@ fun Details(
     forecast: ForecastResponse?,
     iconUrl: String?,
     isLoading: Boolean,
-    tempUnit:String
+    tempUnit: String
 ) {
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -132,8 +178,7 @@ fun Details(
                 )
             )
             .verticalScroll(rememberScrollState())
-    )
-    {
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(),
@@ -144,21 +189,18 @@ fun Details(
             } else {
                 TopCurrentWeatherDetails(weather, iconUrl)
                 Spacer(modifier = Modifier.height(16.dp))
-                CurrentWeatherDetails(weather,tempUnit)
+                CurrentWeatherDetails(weather, tempUnit)
                 HourlyDetails(forecast, iconUrl)
                 Spacer(modifier = Modifier.height(16.dp))
                 DailyDetails(weather)
                 NextFiveDays(forecast, iconUrl, weather)
             }
-
-
         }
     }
 }
 
 @Composable
 fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -167,39 +209,29 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-
         if (weather != null) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "${weather.weather[0].description}",
+                    text = stringResource(R.string.today),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 val feelsLike = weather.main.feels_Like_Human.let {
-                    if (it == 0.0) 9
-                    else
-                        if (it.toInt() < 0) {
-                            it
-                        } else {
-
-                        }
+                    if (it == 0.0) 9 else it
                 }
-
                 Text(
-                    text = "Feels_Like : $feelsLike°C",
+                    text = "${stringResource(R.string.feel_like)}: $feelsLike°C",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
-
             }
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) { WeatherIcon(iconUrl) }
         if (weather != null) {
-
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -218,15 +250,12 @@ fun TopCurrentWeatherDetails(weather: WeatherResponse?, iconUrl: String?) {
                     fontWeight = FontWeight.Bold
                 )
             }
-
         }
-
-
     }
 }
 
 @Composable
-fun CurrentWeatherDetails(weather: WeatherResponse?,tempUnit:String) {
+fun CurrentWeatherDetails(weather: WeatherResponse?, tempUnit: String) {
     if (weather != null) {
         Column(
             modifier = Modifier
@@ -234,9 +263,7 @@ fun CurrentWeatherDetails(weather: WeatherResponse?,tempUnit:String) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             val temp = weather.main.temp.toInt()
-
             val unit = when (tempUnit) {
                 "metric" -> "°C"
                 "standard" -> "°K"
@@ -250,7 +277,7 @@ fun CurrentWeatherDetails(weather: WeatherResponse?,tempUnit:String) {
             )
 
             Text(
-                text = weather.sys.country + "," + weather.name,
+                text = "${weather.sys.country}, ${weather.name}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -264,21 +291,19 @@ fun CurrentWeatherDetails(weather: WeatherResponse?,tempUnit:String) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "\uD83C\uDF07 sunset ${convertTimestampToTimeOnly(weather.sys.sunset)}",
+                    text = "\uD83C\uDF07 ${stringResource(R.string.sunset)} ${convertTimestampToTimeOnly(weather.sys.sunset)}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "\uD83C\uDF05 sunrise ${convertTimestampToTimeOnly(weather.sys.sunrise)}",
+                    text = "\uD83C\uDF05 ${stringResource(R.string.sunrise)} ${convertTimestampToTimeOnly(weather.sys.sunrise)}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
-
     }
 }
-
 
 @Composable
 fun HourlyDetails(forecast: ForecastResponse?, iconUrl: String?) {
@@ -530,4 +555,27 @@ fun WeatherIcon(iconUrl: String?) {
             modifier = Modifier.size(64.dp)
         )
     }
+}
+
+fun getCurrentLocation(context: Context, onLocationReceived: (Double, Double) -> Unit) {
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+    if (ActivityCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED &&
+        ActivityCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED
+    ) {
+        return
+    }
+
+    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+        .addOnSuccessListener { location ->
+            if (location != null) {
+                onLocationReceived(location.latitude, location.longitude)
+            }
+        }
 }

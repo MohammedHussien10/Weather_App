@@ -18,7 +18,9 @@ import kotlinx.coroutines.flow.onEach
 // DataStore Instance
 
 
-class DataStoreManager(private val context: Context) {
+interface IDataStoreManager
+
+class DataStoreManager(private val context: Context) : IDataStoreManager {
 
     companion object {
         @Volatile
@@ -47,7 +49,7 @@ class DataStoreManager(private val context: Context) {
     val language: Flow<String> = context.dataStore.data
         .map { preferences -> preferences[LANGUAGE_KEY] ?: "English" }
 
-    suspend fun saveLanguage(language: String) {
+    open suspend fun saveLanguage(language: String) {
         context.dataStore.edit { preferences ->
             preferences[LANGUAGE_KEY] = language
         }
@@ -104,7 +106,7 @@ class DataStoreManager(private val context: Context) {
     }
 
     // Save Location (Latitude & Longitude) together
-    suspend fun saveLocation(lat: Double, lon: Double) {
+    open suspend fun saveLocation(lat: Double, lon: Double) {
         context.dataStore.edit { preferences ->
             preferences[LATITUDE_KEY] = lat
             preferences[LONGITUDE_KEY] = lon
